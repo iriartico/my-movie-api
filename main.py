@@ -11,7 +11,7 @@ movies = [
         'id': 1,
         'title': 'Avatar',
         'overview': "En un exuberante planeta llamado Pandora viven los Na'vi, seres que ...",
-        'year': '2009',
+        'year': 2009,
         'rating': 7.8,
         'category': 'Acción'
     },
@@ -19,7 +19,7 @@ movies = [
         'id': 2,
         'title': 'Avatar 2',
         'overview': "En un exuberante planeta llamado Pandora viven los Na'vi, cotinuan con ...",
-        'year': '2022',
+        'year': 2022,
         'rating': 7.1,
         'category': 'Acción'
     }
@@ -40,3 +40,9 @@ def get_movies():
 def get_movie(id: int):
     movie = list(filter(lambda x: x['id'] == id, movies))
     return movie[0] if len(movie) > 0 else "Nothing to show"
+
+
+@app.get('/movies/', tags=['movies'])
+def get_movies_by_category(category: str, year: int):
+    movies_by_category = list(filter(lambda x: x['category'] == category and x['year'] == year, movies))
+    return movies_by_category if len(movies_by_category) > 0 else "Nothing to show"
