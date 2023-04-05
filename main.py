@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Path, Query
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 app = FastAPI()
 app.title = "My app with FastAPI"
@@ -9,11 +9,24 @@ app.version = "0.0.1"
 
 class Movie(BaseModel):
     id: Optional[int] = None
-    title: str
-    overview: str
-    year: int
-    rating: float
-    category: str
+    title: str = Field(min_length=5, max_length=15)
+    overview: str = Field(min_length=15, max_length=50)
+    year: int = Field(le=2022)
+    # ge = mayor o igual && le = menor o igual
+    rating: float = Field(ge=1, le=10)
+    category: str = Field(min_length=5, max_length=15)
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": 1,
+                "title": "My movie",
+                "overview": "Description of the movie",
+                "year": 2022,
+                "rating": 5.5,
+                "category": "Action"
+            }
+        }
 
 
 movies = [
@@ -47,15 +60,15 @@ def get_movies():
 
 
 @app.get('/movies/{id}', tags=['movies'])
-def get_movie(id: int):
+def get_movie(id: int = Path(ge=1, le=2000)):
     movie = list(filter(lambda x: x['id'] == id, movies))
     return movie[0] if len(movie) > 0 else "Nothing to show"
 
 
 @app.get('/movies/', tags=['movies'])
-def get_movies_by_category(category: str, year: int):
+def get_movies_by_category(category: str = Query(min_length=5, max_length=15)):
     movies_by_category = list(
-        filter(lambda x: x['category'] == category and x['year'] == year, movies))
+        filter(lambda x: x['category'] == category, movies))
     return movies_by_category if len(movies_by_category) > 0 else "Nothing to show"
 
 
