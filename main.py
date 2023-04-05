@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Body, Path, Query
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional
 app = FastAPI()
@@ -54,9 +54,9 @@ def home():
     return HTMLResponse('<h1>Home Page</h1>')
 
 
-@app.get('/movies', tags=['movies'])
+@app.get('/movies', tags=['movies'], status_code=200)
 def get_movies():
-    return movies
+    return JSONResponse(status_code=200, content=movies)
 
 
 @app.get('/movies/{id}', tags=['movies'])
@@ -69,16 +69,16 @@ def get_movie(id: int = Path(ge=1, le=2000)):
 def get_movies_by_category(category: str = Query(min_length=5, max_length=15)):
     movies_by_category = list(
         filter(lambda x: x['category'] == category, movies))
-    return movies_by_category if len(movies_by_category) > 0 else "Nothing to show"
+    return JSONResponse(content=movies_by_category) if len(movies_by_category) > 0 else "Nothing to show"
 
 
-@app.post('/movies', tags=['movies'])
+@app.post('/movies', tags=['movies'], status_code=201)
 def create_movie(movie: Movie):
     movies.append(movie)
-    return movies
+    return JSONResponse(status_code=201, content={"message": "Movie registered"})
 
 
-@app.put('/movies/{id}', tags=['movies'])
+@app.put('/movies/{id}', tags=['movies'], status_code=200)
 def update_movie(id: int, movie: Movie):
     for item in movies:
         if item['id'] == id:
@@ -87,14 +87,14 @@ def update_movie(id: int, movie: Movie):
             item['year'] = movie.year
             item['rating'] = movie.rating
             item['category'] = movie.category
-        return movies
+        return JSONResponse(status_code=200, content={"message": "Movie updated"})
 
 
-@app.delete('/movies/{id}', tags=['movies'])
+@app.delete('/movies/{id}', tags=['movies'], status_code=200)
 def remove_movie(id: int):
     for item in movies:
         if item['id'] == id:
             movies.remove(item)
-            return movies
+            return JSONResponse(status_code=200, content={"message": "Movie deleted"})
         else:
-            return 'Movie not found'
+            return JSONResponse(status_code=404, content={"message": "Movie not found"})
