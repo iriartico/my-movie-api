@@ -1,13 +1,22 @@
-from fastapi import FastAPI, Body, Path, Query
+from fastapi import FastAPI, Body, Path, Query, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional
-from jwt_manager import create_token
+from jwt_manager import create_token, validate_token
+from fastapi.security import HTTPBearer
 
 
 app = FastAPI()
 app.title = "My app with FastAPI"
 app.version = "0.0.1"
+
+
+class JWTBearer(HTTPBearer):
+    async def __call__(self, request: Request):
+        auth = await super().__call__(request)
+        data = validate_token(auth.credentials)
+        if data['email'] != "admin@email.com":
+            raise HTTPException(status_code=403, detail="Invalid credentials")
 
 
 class User(BaseModel):
@@ -69,8 +78,8 @@ def login(user: User):
     return JSONResponse(status_code=200, content=token)
 
 
-@app.get('/movies', tags=['movies'], status_code=200)
-def get_movies():
+@app.get('/movies', tags=['movies'], status_code=200, dependencies=[Depends(JWTBearer())])
+def get_movies() -> list[Movie]:
     return JSONResponse(status_code=200, content=movies)
 
 
@@ -80,7 +89,7 @@ def get_movie(id: int = Path(ge=1, le=2000)):
     return movie[0] if len(movie) > 0 else "Nothing to show"
 
 
-@app.get('/movies/', tags=['movies'])
+@app.get('/movies/', tags=['movies'], status_code=200)
 def get_movies_by_category(category: str = Query(min_length=5, max_length=15)):
     movies_by_category = list(
         filter(lambda x: x['category'] == category, movies))
