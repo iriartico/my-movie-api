@@ -2,9 +2,17 @@ from fastapi import FastAPI, Body, Path, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional
+from jwt_manager import create_token
+
+
 app = FastAPI()
 app.title = "My app with FastAPI"
 app.version = "0.0.1"
+
+
+class User(BaseModel):
+    email: str
+    password: str
 
 
 class Movie(BaseModel):
@@ -52,6 +60,11 @@ movies = [
 @app.get('/', tags=['home'])
 def home():
     return HTMLResponse('<h1>Home Page</h1>')
+
+
+@app.post('/login', tags=['auth'])
+def login(user: User):
+    return user
 
 
 @app.get('/movies', tags=['movies'], status_code=200)
