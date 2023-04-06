@@ -51,26 +51,6 @@ class Movie(BaseModel):
         }
 
 
-movies = [
-    {
-        'id': 1,
-        'title': 'Avatar',
-        'overview': "En un exuberante planeta llamado Pandora viven los Na'vi, seres que ...",
-        'year': 2009,
-        'rating': 7.8,
-        'category': 'Acción'
-    },
-    {
-        'id': 2,
-        'title': 'Avatar 2',
-        'overview': "En un exuberante planeta llamado Pandora viven los Na'vi, cotinuan con ...",
-        'year': 2022,
-        'rating': 7.1,
-        'category': 'Acción'
-    }
-]
-
-
 @app.get('/', tags=['home'])
 def home():
     return HTMLResponse('<h1>Home Page</h1>')
@@ -83,7 +63,8 @@ def login(user: User):
     return JSONResponse(status_code=200, content=token)
 
 
-@app.get('/movies', tags=['movies'], status_code=200, dependencies=[Depends(JWTBearer())])
+@app.get('/movies', tags=['movies'], status_code=200)
+# @app.get('/movies', tags=['movies'], status_code=200, dependencies=[Depends(JWTBearer())])
 def get_movies() -> list[Movie]:
     db = Session()
     response = db.query(MovieModel).all()
@@ -121,21 +102,27 @@ def create_movie(movie: Movie):
 
 @app.put('/movies/{id}', tags=['movies'], status_code=200)
 def update_movie(id: int, movie: Movie):
-    for item in movies:
-        if item['id'] == id:
-            item['title'] = movie.title
-            item['overview'] = movie.overview
-            item['year'] = movie.year
-            item['rating'] = movie.rating
-            item['category'] = movie.category
-        return JSONResponse(status_code=200, content={"message": "Movie updated"})
+    db = Session()
+    response = db.query(MovieModel).filter(MovieModel.id == id).first()
+    if not response:
+        return JSONResponse(status_code=404, content={"message": "Movie not found"})
+
+    response.title = movie.title
+    response.overview = movie.overview
+    response.year = movie.year
+    response.rating = movie.rating
+    response.category = movie.category
+    db.commit()
+    return JSONResponse(status_code=200, content={"message": "Movie updated"})
 
 
 @app.delete('/movies/{id}', tags=['movies'], status_code=200)
 def remove_movie(id: int):
-    for item in movies:
-        if item['id'] == id:
-            movies.remove(item)
-            return JSONResponse(status_code=200, content={"message": "Movie deleted"})
-        else:
-            return JSONResponse(status_code=404, content={"message": "Movie not found"})
+    db = Session()
+    response = db.query(MovieModel).filter(MovieModel.id == id).first()
+    if not response:
+        return JSONResponse(status_code=404, content={"message": "Movie not found"})
+
+    db.delete(response)
+    db.commit()
+    return JSONResponse(status_code=200, content={"message": "Movie deleted"})
